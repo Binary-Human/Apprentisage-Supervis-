@@ -19,4 +19,4 @@ def vizualise_all():
     for col in df.columns.tolist() :
         vizualise_parameter(str(col))
 
-vizualise_all()
+# vizualise_all()

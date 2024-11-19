@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from visualization import vizualise_parameter
+import joblib
 import os
 
 scaler = StandardScaler()
@@ -23,3 +24,6 @@ print("Train set after scaling : ")
 print(x_train_scaled)
 print("Test set after transformation : ")
 print(x_test_scaled)
+
+# Enregistrement de la transformation
+joblib.dump(scaler ,'scaler.joblib')
