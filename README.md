@@ -18,7 +18,6 @@ conda list
 
 ## Running the code
 
-
 ### Different options
 
 ### Utility functions:
