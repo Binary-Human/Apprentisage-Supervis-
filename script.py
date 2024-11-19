@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
 from visualization import vizualise_parameter
+import joblib
 import os
 
 scaler = StandardScaler()
@@ -22,8 +23,7 @@ df_values,test_size = 0.3, shuffle=True)
 #print(x_train.head())
 
 x_train_scaled = scaler.fit_transform(x_train)
-
-#Pas de scaler sur le x_test, juste transformer le x_test
+# On ne réevalue pas les paramètre de la transformation sur x_test, juste transformer le x_test
 x_test_scaled = scaler.transform(x_test)
 
 #print("Train set after scaling : ")
