@@ -41,10 +41,10 @@ x_test_scaled = scaler.transform(x_test)
 
 ## Random Forest
 param_grid = { 
-    'n_estimators': [200],
-    'max_features': ['sqrt'],
-    'max_depth' : [8],
-    'criterion' :['gini']
+    'n_estimators': [200,500],
+    'max_features': ['log2','sqrt'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini','entropy']
 }
 
 def printMetrics(y_test, y_pred):
@@ -101,21 +101,25 @@ def standardCrossValidation(model):
     disp.plot()
     plt.show()
 
+
+
 def searchBestRandomForest():
-    model = RandomForestClassifier()
-    CV_rf = GridSearchCV(estimator=model, param_grid=param_grid, cv= 5)
-    CV_rf.fit(x_train, y_train)
+    rf = RandomForestClassifier()
+    CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid, cv= 5, verbose=4)
+    CV_rf.fit(x_train_scaled, y_train)
     best_params = CV_rf.best_params_
+    print("Best parameters : ", best_params)
 
     rf_best = RandomForestClassifier(random_state=None,max_features=best_params["max_features"],
                                         n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
                                         criterion=best_params["criterion"])
-
+    joblib.dump(CV_rf.best_estimator_,'RandomForest_BestModel_05890.joblib')
     rf_best.fit(x_train_scaled,y_train)
     y_pred = rf_best.predict(x_test)
 
     print("\nMetrics for Random Forest parameters\n")
     printMetrics(y_test, y_pred)
+
 
 
 def adaBoost():
