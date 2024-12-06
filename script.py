@@ -30,6 +30,7 @@ x_train_scaled = scaler.fit_transform(x_train)
 # On ne réevalue pas les paramètre de la transformation sur x_test, juste transformer le x_test
 x_test_scaled = scaler.transform(x_test)
 
+
 #print("Train set after scaling : ")
 #print(x_train_scaled)
 #print("Test set after transformation : ")
@@ -107,8 +108,6 @@ def standardCrossValidation(model):
     disp.plot()
     plt.show()
 
-
-
 def searchBestRandomForest():
     rf = RandomForestClassifier()
     CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, cv= 5, verbose=4)
@@ -119,7 +118,6 @@ def searchBestRandomForest():
     rf_best = RandomForestClassifier(random_state=None,max_features=best_params["max_features"],
                                         n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
                                         criterion=best_params["criterion"])
-    
     joblib.dump(CV_rf.best_estimator_,'RandomForest_BestModel_05890.joblib')
     rf_best.fit(x_train_scaled,y_train)
     y_pred = rf_best.predict(x_test)
@@ -153,5 +151,4 @@ def searchBestAdaBoost():
 #standardCrossValidation(AdaBoostClassifier())
 
 searchBestAdaBoost()
-
-
+searchBestModel()
