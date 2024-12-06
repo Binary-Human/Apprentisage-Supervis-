@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, classification_report, ConfusionMatrixDisplay
 from visualization import vizualise_parameter
 import joblib
-#import xgboost as xgb
+import xgboost as xgb
 import os
 
 from sklearn.model_selection import cross_val_predict, cross_val_score
@@ -105,7 +105,7 @@ def searchBestModelRandomForest():
         'criterion' :['gini','entropy']
     }
     rf = RandomForestClassifier()
-    CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid, cv= 5, verbose=4)
+    CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, cv= 5, verbose=4)
     CV_rf.fit(x_train_scaled, y_train)
     best_params = CV_rf.best_params_
     print("Best parameters : ", best_params)
@@ -165,11 +165,11 @@ def searchBestModelXGBoost() :
     'max_depth': [3, 5, 7],
     'learning_rate': [0.1, 0.01, 0.001],
     'subsample': [0.5, 0.7, 1]
-}
+    }
 
-    xgb = xgb.XGBClassifier()
+    xgb_model = xgb.XGBClassifier()
     
-    CV_xg = GridSearchCV(xgb, param_grid, cv=5, scoring='accuracy')
+    CV_xg = GridSearchCV(xgb_model, param_grid, cv=5, verbose=4, scoring='accuracy')
     CV_xg.fit(x_train_scaled,y_train)
 
     best_params = CV_xg.best_params_
@@ -179,5 +179,30 @@ def searchBestModelXGBoost() :
                                         subsample=best_params["subsample"], learning_rate=best_params["learning_rate"])
 
     
+    xg_best.fit(x_train_scaled,y_train)
+    y_pred = xg_best.predict(x_test_scaled)
 
-load_best_rf()
+    # Metrics
+    #Accuracy : % of correct predictions
+    accuracy = accuracy_score(y_test,y_pred)
+    #Precision : % of TP over "predicted as positive"
+    precision = precision_score(y_test, y_pred)
+    #Recall : % of TP over "really positive"
+    recall = recall_score(y_test, y_pred)
+    print("Accuracy : ", accuracy)
+    print("Precision : ", precision)
+    print("Recall : ", recall)
+
+    # Create the confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    print("Confusion matrix : ")
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.show()
+
+## XGBoost fonctionne maintenant tu dois tester pour tout le grid, donc sur le gpu stp :)
+
+searchBestModelXGBoost()
+
+#joblib.dump(CV_xg.best_estimator_,'XGBoost_BestModel_05890.joblib')
