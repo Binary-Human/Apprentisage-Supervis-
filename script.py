@@ -40,11 +40,17 @@ x_test_scaled = scaler.transform(x_test)
 ##################################################################################################
 
 ## Random Forest
-param_grid = { 
+param_grid_rf = { 
     'n_estimators': [200,500],
     'max_features': ['log2','sqrt'],
     'max_depth' : [4,5,6,7,8],
     'criterion' :['gini','entropy']
+}
+
+param_grid_aBoost = { 
+    'n_estimators': [10, 50, 100, 500],
+    'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1.0],
+    'algorithm' : ['SAMME']
 }
 
 def printMetrics(y_test, y_pred):
@@ -105,7 +111,7 @@ def standardCrossValidation(model):
 
 def searchBestRandomForest():
     rf = RandomForestClassifier()
-    CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid, cv= 5, verbose=4)
+    CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, cv= 5, verbose=4)
     CV_rf.fit(x_train_scaled, y_train)
     best_params = CV_rf.best_params_
     print("Best parameters : ", best_params)
@@ -113,24 +119,39 @@ def searchBestRandomForest():
     rf_best = RandomForestClassifier(random_state=None,max_features=best_params["max_features"],
                                         n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
                                         criterion=best_params["criterion"])
+    
     joblib.dump(CV_rf.best_estimator_,'RandomForest_BestModel_05890.joblib')
     rf_best.fit(x_train_scaled,y_train)
     y_pred = rf_best.predict(x_test)
 
-    print("\nMetrics for Random Forest parameters\n")
+    print("\nMetrics for Random Forest Best parameters\n")
     printMetrics(y_test, y_pred)
 
-
-
-def adaBoost():
+def searchBestAdaBoost():
     aBoost = AdaBoostClassifier()
-    adaBoost.fit(x_train_scaled, y_train )
-    y_pred_std = adaBoost.predict(x_test_scaled)
+    CV_aB = GridSearchCV(estimator=aBoost, param_grid=param_grid_aBoost, n_jobs=-1, cv=5, verbose=4)
+    # scoring='accuracy') ?
+    CV_aB.fit(x_train_scaled, y_train )
+    best_params = CV_aB.best_params_
+
+    aB_best = AdaBoostClassifier(random_state=None, 
+                                 n_estimators=best_params["n_estimators"],
+                                 learning_rate=best_params["learning_rate"],
+                                 algorithm=best_params["algorithm"])
+
+    joblib.dump(CV_aB.best_estimator_,'AdaBoost_BestModel_XXXXX.joblib')
+    aB_best.fit(x_train_scaled,y_train)
+    y_pred = aB_best.predict(x_test)
+
+    print("\nMetrics for AdaBoost Best parameters\n")
+    printMetrics(y_test, y_pred)
 
 #standard(RandomForestClassifier())
 #standardCrossValidation(RandomForestClassifier())
 
-standard(AdaBoostClassifier())
-standardCrossValidation(AdaBoostClassifier())
+#standard(AdaBoostClassifier())
+#standardCrossValidation(AdaBoostClassifier())
+
+searchBestAdaBoost()
 
 
