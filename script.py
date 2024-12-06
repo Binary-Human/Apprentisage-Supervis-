@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, classification_report, ConfusionMatrixDisplay
 from visualization import vizualise_parameter
 import joblib
@@ -40,36 +41,50 @@ x_test_scaled = scaler.transform(x_test)
 #   DIFFERENT METHODS :
 ##################################################################################################
 
-# Standard performance metrics
-def standard():
-    rf = RandomForestClassifier()
-    rf.fit(x_train_scaled, y_train)
-    y_pred_std = rf.predict(x_test_scaled)
+## Random Forest
+param_grid_rf = { 
+    'n_estimators': [200,500],
+    'max_features': ['log2','sqrt'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini','entropy']
+}
 
-    print("\nMetrics for Standard parameters\n")
+param_grid_aBoost = { 
+    'n_estimators': [10, 50, 100, 500],
+    'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1.0],
+    'algorithm' : ['SAMME']
+}
+
+def printMetrics(y_test, y_pred):
+
     #Accuracy : % of correct predictions
-    accuracy = accuracy_score(y_test,y_pred_std)
+    accuracy = accuracy_score(y_test,y_pred)
     #Precision : % of TP over "predicted as positive"
-    precision = precision_score(y_test, y_pred_std)
+    precision = precision_score(y_test, y_pred)
     #Recall : % of TP over "really positive"
-    recall = recall_score(y_test, y_pred_std)
+    recall = recall_score(y_test, y_pred)
     print("Accuracy : ", accuracy)
     print("Precision : ", precision)
     print("Recall : ", recall)
 
     # Create the confusion matrix
-    cm = confusion_matrix(y_test, y_pred_std)
+    cm = confusion_matrix(y_test, y_pred)
     print("Confusion matrix : ")
     print(cm)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.show()
 
+# Standard performance metrics
+def standard(model):
+    model.fit(x_train_scaled, y_train )
+    y_pred_std = model.predict(x_test_scaled)
+
+    print(f"\nMetrics for {model} parameters\n")
+    printMetrics(y_test, y_pred_std)
 
 # Uses crossValidation to asses performance
-def standardCrossValidation():
-    # Paramétrage par défaut
-    model = RandomForestClassifier()
+def standardCrossValidation(model):
     # Obtenir les prédictions avec validation croisée
     y_pred = cross_val_predict(model, x_test_scaled, y_test, cv=5)
     # Calculer les scores de validation croisée (accuracy)
@@ -86,7 +101,6 @@ def standardCrossValidation():
     print("\nClassification Report :")
     print(classification_report(y_test, y_pred))
 
-
     # Create the confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     print("Confusion matrix : ")
@@ -95,15 +109,7 @@ def standardCrossValidation():
     disp.plot()
     plt.show()
 
-def searchBestModelRandomForest():
-
-    # Params for Random Forest
-    param_grid_rf = { 
-        'n_estimators': [200,500],
-        'max_features': ['log2','sqrt'],
-        'max_depth' : [4,5,6,7,8],
-        'criterion' :['gini','entropy']
-    }
+def searchBestRandomForest():
     rf = RandomForestClassifier()
     CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, cv= 5, verbose=4)
     CV_rf.fit(x_train_scaled, y_train)
@@ -117,92 +123,33 @@ def searchBestModelRandomForest():
     rf_best.fit(x_train_scaled,y_train)
     y_pred = rf_best.predict(x_test_scaled)
 
-    # Metrics
-    #Accuracy : % of correct predictions
-    accuracy = accuracy_score(y_test,y_pred)
-    #Precision : % of TP over "predicted as positive"
-    precision = precision_score(y_test, y_pred)
-    #Recall : % of TP over "really positive"
-    recall = recall_score(y_test, y_pred)
-    print("Accuracy : ", accuracy)
-    print("Precision : ", precision)
-    print("Recall : ", recall)
+    print("\nMetrics for Random Forest Best parameters\n")
+    printMetrics(y_test, y_pred)
 
-    # Create the confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    print("Confusion matrix : ")
-    print(cm)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.show()
+def searchBestAdaBoost():
+    aBoost = AdaBoostClassifier()
+    CV_aB = GridSearchCV(estimator=aBoost, param_grid=param_grid_aBoost, n_jobs=-1, cv=5, verbose=4)
+    # scoring='accuracy') ?
+    CV_aB.fit(x_train_scaled, y_train )
+    best_params = CV_aB.best_params_
 
-def load_best_rf():
-    best_rf = joblib.load('RandomForest_BestModel_08110.joblib')
-    print("Estimators : ",best_rf.estimators_)
-    y_pred = best_rf.predict(x_test_scaled)
-    # Metrics
-    #Accuracy : % of correct predictions
-    accuracy = accuracy_score(y_test,y_pred)
-    #Precision : % of TP over "predicted as positive"
-    precision = precision_score(y_test, y_pred)
-    #Recall : % of TP over "really positive"
-    recall = recall_score(y_test, y_pred)
-    print("Accuracy : ", accuracy)
-    print("Precision : ", precision)
-    print("Recall : ", recall)
-     # Create the confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    print("Confusion matrix : ")
-    print(cm)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.show()
+    aB_best = AdaBoostClassifier(random_state=None, 
+                                 n_estimators=best_params["n_estimators"],
+                                 learning_rate=best_params["learning_rate"],
+                                 algorithm=best_params["algorithm"])
 
-def searchBestModelXGBoost() :
-    #Params for grid search
-    param_grid = {
-    'n_estimators': [200,500],
-    'max_depth': [3, 5, 7],
-    'learning_rate': [0.1, 0.01, 0.001],
-    'subsample': [0.5, 0.7, 1]
-    }
+    joblib.dump(CV_aB.best_estimator_,'AdaBoost_BestModel_XXXXX.joblib')
+    aB_best.fit(x_train_scaled,y_train)
+    y_pred = aB_best.predict(x_test)
 
-    xgb_model = xgb.XGBClassifier()
-    
-    CV_xg = GridSearchCV(xgb_model, param_grid, cv=5, verbose=4, scoring='accuracy')
-    CV_xg.fit(x_train_scaled,y_train)
+    print("\nMetrics for AdaBoost Best parameters\n")
+    printMetrics(y_test, y_pred)
 
-    best_params = CV_xg.best_params_
-    print("Best parameters : ", best_params)
+#standard(RandomForestClassifier())
+#standardCrossValidation(RandomForestClassifier())
 
-    xg_best = xgb.XGBClassifier(n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
-                                        subsample=best_params["subsample"], learning_rate=best_params["learning_rate"])
+#standard(AdaBoostClassifier())
+#standardCrossValidation(AdaBoostClassifier())
 
-    
-    xg_best.fit(x_train_scaled,y_train)
-    y_pred = xg_best.predict(x_test_scaled)
-
-    # Metrics
-    #Accuracy : % of correct predictions
-    accuracy = accuracy_score(y_test,y_pred)
-    #Precision : % of TP over "predicted as positive"
-    precision = precision_score(y_test, y_pred)
-    #Recall : % of TP over "really positive"
-    recall = recall_score(y_test, y_pred)
-    print("Accuracy : ", accuracy)
-    print("Precision : ", precision)
-    print("Recall : ", recall)
-
-    # Create the confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    print("Confusion matrix : ")
-    print(cm)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.show()
-
-## XGBoost fonctionne maintenant tu dois tester pour tout le grid, donc sur le gpu stp :)
-
-searchBestModelXGBoost()
-
-#joblib.dump(CV_xg.best_estimator_,'XGBoost_BestModel_05890.joblib')
+searchBestAdaBoost()
+searchBestModel()
