@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, classification_report, ConfusionMatrixDisplay
 from visualization import vizualise_parameter
 import joblib
+#import xgboost as xgb
 import os
 
 from sklearn.model_selection import cross_val_predict, cross_val_score
@@ -38,14 +39,6 @@ x_test_scaled = scaler.transform(x_test)
 #################################################################################################
 #   DIFFERENT METHODS :
 ##################################################################################################
-
-## Random Forest
-param_grid = { 
-    'n_estimators': [200,500],
-    'max_features': ['log2','sqrt'],
-    'max_depth' : [4,5,6,7,8],
-    'criterion' :['gini','entropy']
-}
 
 # Standard performance metrics
 def standard():
@@ -102,8 +95,15 @@ def standardCrossValidation():
     disp.plot()
     plt.show()
 
-def searchBestModel():
+def searchBestModelRandomForest():
 
+    # Params for Random Forest
+    param_grid_rf = { 
+        'n_estimators': [200,500],
+        'max_features': ['log2','sqrt'],
+        'max_depth' : [4,5,6,7,8],
+        'criterion' :['gini','entropy']
+    }
     rf = RandomForestClassifier()
     CV_rf = GridSearchCV(estimator=rf, param_grid=param_grid, cv= 5, verbose=4)
     CV_rf.fit(x_train_scaled, y_train)
@@ -115,7 +115,7 @@ def searchBestModel():
                                         criterion=best_params["criterion"])
     joblib.dump(CV_rf.best_estimator_,'RandomForest_BestModel_05890.joblib')
     rf_best.fit(x_train_scaled,y_train)
-    y_pred = rf_best.predict(x_test)
+    y_pred = rf_best.predict(x_test_scaled)
 
     # Metrics
     #Accuracy : % of correct predictions
@@ -136,4 +136,48 @@ def searchBestModel():
     disp.plot()
     plt.show()
 
-searchBestModel()
+def load_best_rf():
+    best_rf = joblib.load('RandomForest_BestModel_08110.joblib')
+    print("Estimators : ",best_rf.estimators_)
+    y_pred = best_rf.predict(x_test_scaled)
+    # Metrics
+    #Accuracy : % of correct predictions
+    accuracy = accuracy_score(y_test,y_pred)
+    #Precision : % of TP over "predicted as positive"
+    precision = precision_score(y_test, y_pred)
+    #Recall : % of TP over "really positive"
+    recall = recall_score(y_test, y_pred)
+    print("Accuracy : ", accuracy)
+    print("Precision : ", precision)
+    print("Recall : ", recall)
+     # Create the confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    print("Confusion matrix : ")
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.show()
+
+def searchBestModelXGBoost() :
+    #Params for grid search
+    param_grid = {
+    'n_estimators': [200,500],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.1, 0.01, 0.001],
+    'subsample': [0.5, 0.7, 1]
+}
+
+    xgb = xgb.XGBClassifier()
+    
+    CV_xg = GridSearchCV(xgb, param_grid, cv=5, scoring='accuracy')
+    CV_xg.fit(x_train_scaled,y_train)
+
+    best_params = CV_xg.best_params_
+    print("Best parameters : ", best_params)
+
+    xg_best = xgb.XGBClassifier(n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
+                                        subsample=best_params["subsample"], learning_rate=best_params["learning_rate"])
+
+    
+
+load_best_rf()
