@@ -145,6 +145,34 @@ def searchBestAdaBoost():
     print("\nMetrics for AdaBoost Best parameters\n")
     printMetrics(y_test, y_pred)
 
+def searchBestModelXGBoost() :
+    #Params for grid search
+    param_grid = {
+    'n_estimators': [200,500],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.1, 0.01, 0.001],
+    'subsample': [0.5, 0.7, 1]
+    }
+
+    xgb_model = xgb.XGBClassifier()
+    
+    CV_xg = GridSearchCV(xgb_model, param_grid, cv=5, verbose=4, scoring='accuracy')
+    CV_xg.fit(x_train_scaled,y_train)
+
+    best_params = CV_xg.best_params_
+    print("Best parameters : ", best_params)
+
+    xg_best = xgb.XGBClassifier(n_estimators=best_params["n_estimators"],max_depth=best_params["max_depth"],
+                                        subsample=best_params["subsample"], learning_rate=best_params["learning_rate"])
+
+    
+    xg_best.fit(x_train_scaled,y_train)
+    y_pred = xg_best.predict(x_test_scaled)
+    
+    print("\nMetrics for XGBoost Best parameters\n")
+    printMetrics(y_test, y_pred)
+
+
 #standard(RandomForestClassifier())
 #standardCrossValidation(RandomForestClassifier())
 
